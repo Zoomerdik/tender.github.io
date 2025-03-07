@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="container">
+    <div class="container mtb-3">
         <h2>Калькулятор тендера</h2>
         <div class="input-group">
             <label>Название товара:</label>
@@ -46,9 +46,9 @@
         <p id="netProfit"></p>
         <button onclick="saveToArchive()">Сохранить в архив</button>
     </div>
-    <div class="archive-container">
+    <div class="archive-container mtb-3">
         <h3>Архив:</h3>
-        <table id="archiveTable">
+        <table id="archiveTable" class="table">
             <thead>
                 <tr>
                     <th>Название</th>
@@ -64,11 +64,11 @@
             </thead>
             <tbody id="archiveList"></tbody>
         </table>
-        <button onclick="restoreLastDeleted()">Восстановить</button>
     </div>
     <script src="script.js"></script>
     <script>
-        let lastDeletedRow = null;
+        let archiveData = JSON.parse(localStorage.getItem("archiveData")) || [];
+
         function calculateTotal() {
             let quantity = parseFloat(document.getElementById("quantity").value) || 0;
             let bidPricePerUnit = parseFloat(document.getElementById("bidPricePerUnit").value) || 0;
@@ -81,45 +81,68 @@
             let totalBidPrice = parseFloat(document.getElementById("totalBidPrice").value) || 0;
             let totalPurchasePrice = parseFloat(document.getElementById("totalPurchasePrice").value) || 0;
             let profit = totalBidPrice - totalPurchasePrice;
-            let profitPercentage = (profit / totalPurchasePrice) * 100;
             let cartakartaFee = totalPurchasePrice * 0.04;
             let bankFee = totalBidPrice * 0.01;
-            let tax = totalBidPrice * 0.03;
+            let tax = profit * 0.03;
             let netProfit = profit - cartakartaFee - bankFee - tax;
-            let netProfitPercentage = (netProfit / totalPurchasePrice) * 100;
-            document.getElementById("profitResult").innerHTML = `Прибыль: ${profit.toFixed(2)} тг (${profitPercentage.toFixed(2)}%)`;
+            document.getElementById("profitResult").innerHTML = `Прибыль: ${profit.toFixed(2)} тг`;
             document.getElementById("cartakartaFee").innerHTML = `Комиссия картакарта 4%: ${cartakartaFee.toFixed(2)} тг`;
             document.getElementById("bankFee").innerHTML = `Комиссия банка 1%: ${bankFee.toFixed(2)} тг`;
             document.getElementById("tax").innerHTML = `Налог 3%: ${tax.toFixed(2)} тг`;
-            document.getElementById("netProfit").innerHTML = `Чистая прибыль: ${netProfit.toFixed(2)} тг (${netProfitPercentage.toFixed(2)}%)`;
+            document.getElementById("netProfit").innerHTML = `Чистая прибыль: ${netProfit.toFixed(2)} тг`;
         }
         
         function saveToArchive() {
+            let data = {
+                productName: document.getElementById("productName").value,
+                customerPrice: document.getElementById("customerPrice").value,
+                quantity: document.getElementById("quantity").value,
+                bidPricePerUnit: document.getElementById("bidPricePerUnit").value,
+                totalBidPrice: document.getElementById("totalBidPrice").value,
+                purchasePricePerUnit: document.getElementById("purchasePricePerUnit").value,
+                totalPurchasePrice: document.getElementById("totalPurchasePrice").value,
+                netProfit: document.getElementById("netProfit").innerText.split(" ")[2]
+            };
+            archiveData.push(data);
+            localStorage.setItem("archiveData", JSON.stringify(archiveData));
+            renderArchive();
+        }
+
+        function renderArchive() {
             let archiveList = document.getElementById("archiveList");
-            let row = archiveList.insertRow();
-            row.innerHTML = `
-                <td>${document.getElementById("productName").value}</td>
-                <td>${document.getElementById("customerPrice").value}</td>
-                <td>${document.getElementById("quantity").value}</td>
-                <td>${document.getElementById("bidPricePerUnit").value}</td>
-                <td>${document.getElementById("totalBidPrice").value}</td>
-                <td>${document.getElementById("purchasePricePerUnit").value}</td>
-                <td>${document.getElementById("totalPurchasePrice").value}</td>
-                <td>${document.getElementById("netProfit").innerText}</td>
-                <td><button onclick="deleteRow(this)">Удалить</button></td>`;
+            archiveList.innerHTML = "";
+            archiveData.forEach((item, index) => {
+                let row = archiveList.insertRow();
+                row.innerHTML = `
+                    <td>${item.productName}</td>
+                    <td>${item.customerPrice}</td>
+                    <td>${item.quantity}</td>
+                    <td>${item.bidPricePerUnit}</td>
+                    <td>${item.totalBidPrice}</td>
+                    <td>${item.purchasePricePerUnit}</td>
+                    <td>${item.totalPurchasePrice}</td>
+                    <td>${item.netProfit}</td>
+                    <td><button onclick="restoreRow(${index})">Восстановить</button> <button onclick="deleteRow(${index})">Удалить</button></td>`;
+            });
         }
-        
-        function deleteRow(button) {
-            lastDeletedRow = button.parentElement.parentElement.cloneNode(true);
-            button.parentElement.parentElement.remove();
+
+        function restoreRow(index) {
+            let item = archiveData[index];
+            document.getElementById("productName").value = item.productName;
+            document.getElementById("customerPrice").value = item.customerPrice;
+            document.getElementById("quantity").value = item.quantity;
+            document.getElementById("bidPricePerUnit").value = item.bidPricePerUnit;
+            document.getElementById("purchasePricePerUnit").value = item.purchasePricePerUnit;
+            calculateTotal();
         }
-        
-        function restoreLastDeleted() {
-            if (lastDeletedRow) {
-                document.getElementById("archiveList").appendChild(lastDeletedRow);
-                lastDeletedRow = null;
-            }
+
+        function deleteRow(index) {
+            archiveData.splice(index, 1);
+            localStorage.setItem("archiveData", JSON.stringify(archiveData));
+            renderArchive();
         }
+
+        renderArchive();
     </script>
 </body>
 </html>
