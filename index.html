@@ -83,7 +83,7 @@
             let profit = totalBidPrice - totalPurchasePrice;
             let cartakartaFee = totalPurchasePrice * 0.04;
             let bankFee = totalBidPrice * 0.01;
-            let tax = profit * 0.03;
+            let tax = totalBidPrice * 0.03;
             let netProfit = profit - cartakartaFee - bankFee - tax;
             document.getElementById("profitResult").innerHTML = `Прибыль: ${profit.toFixed(2)} тг`;
             document.getElementById("cartakartaFee").innerHTML = `Комиссия картакарта 4%: ${cartakartaFee.toFixed(2)} тг`;
